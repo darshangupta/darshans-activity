@@ -57,6 +57,73 @@ function phaseIntensity(phase: Phase): number {
   return phase === 'half-build' || phase === 'marathon-build' ? 1 : 0;
 }
 
+function firstSaturdayOnOrAfter(date: Date): Date {
+  let d = date;
+  while (weekdayName(d) !== 'saturday') d = addDays(d, 1);
+  return d;
+}
+
+function lastSaturdayBefore(date: Date): Date {
+  let d = addDays(date, -1);
+  while (weekdayName(d) !== 'saturday') d = addDays(d, -1);
+  return d;
+}
+
+function saturdaysBefore(raceDate: Date, count: number): Date[] {
+  const result: Date[] = [];
+  let d = addDays(raceDate, -1);
+  while (result.length < count) {
+    if (weekdayName(d) === 'saturday') result.push(d);
+    d = addDays(d, -1);
+  }
+  return result;
+}
+
+function longRunMiles(
+  date: Date, phase: Phase, half: Race, marathon: Race, config: PlanConfig,
+): number {
+  const halfDate = parseISO(half.date);
+  const marathonDate = parseISO(marathon.date);
+  const { longRun } = config;
+
+  if (phase === 'half-build') {
+    const firstBuildSaturday = firstSaturdayOnOrAfter(parseISO(config.startDate));
+    const week = diffDays(date, firstBuildSaturday) / 7;
+    return longRun.halfStartMiles + longRun.halfRampPerWeek * week;
+  }
+
+  if (phase === 'half-taper') {
+    const taperSaturdays = saturdaysBefore(halfDate, longRun.halfTaperFactors.length);
+    const idx = taperSaturdays.findIndex(d => isSameDate(d, date));
+    if (idx === -1) return 0;
+    const halfTaperStart = addDays(halfDate, -14);
+    const peak = longRunMiles(lastSaturdayBefore(halfTaperStart), 'half-build', half, marathon, config);
+    return Math.round(peak * longRun.halfTaperFactors[idx]);
+  }
+
+  if (phase === 'recovery') {
+    return longRun.recoveryWeekMiles;
+  }
+
+  if (phase === 'marathon-build') {
+    const firstBuildSaturday = firstSaturdayOnOrAfter(addDays(halfDate, 8));
+    const week = diffDays(date, firstBuildSaturday) / 7 + 1;
+    const miles = longRun.recoveryWeekMiles + longRun.marathonRampPerWeek * week;
+    return Math.min(miles, longRun.marathonPeakMiles);
+  }
+
+  if (phase === 'marathon-taper') {
+    const taperSaturdays = saturdaysBefore(marathonDate, longRun.marathonTaperFactors.length);
+    const idx = taperSaturdays.findIndex(d => isSameDate(d, date));
+    if (idx === -1) return 0;
+    const marathonTaperStart = addDays(marathonDate, -21);
+    const peak = longRunMiles(lastSaturdayBefore(marathonTaperStart), 'marathon-build', half, marathon, config);
+    return Math.round(peak * longRun.marathonTaperFactors[idx]);
+  }
+
+  return 0;
+}
+
 export function generatePlan(
   config: PlanConfig,
   races: Race[],
@@ -97,9 +164,11 @@ export function generatePlan(
       continue;
     }
 
-    // Saturday placeholder — long run logic added in the next step
+    // Saturday: long run
+    const phase = getPhase(date, half, marathon);
+    const miles = Math.round(longRunMiles(date, phase, half, marathon, config));
     workouts.push({
-      date: iso, kind: 'run', targetMin: null, targetMax: null,
+      date: iso, kind: 'run', targetMin: miles, targetMax: miles,
       isOverride: false, note: 'Long run',
     });
   }
