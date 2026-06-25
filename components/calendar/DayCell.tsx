@@ -24,17 +24,30 @@ export function DayCell({ date, dayOfMonth, isToday, workout, activity, strength
     <button
       onClick={() => onSelect(date)}
       className={cn(
-        'flex flex-col gap-1 rounded-md border p-2 text-left text-xs min-h-20 hover:ring-2 hover:ring-offset-1 hover:ring-blue-300 transition',
+        'flex flex-col gap-1 rounded-md border p-1.5 sm:p-2 text-left text-xs min-h-16 sm:min-h-20 hover:ring-2 hover:ring-offset-1 hover:ring-blue-300 transition',
         color,
         isToday && 'ring-2 ring-blue-500',
       )}
     >
       <span className="font-semibold">{dayOfMonth}</span>
       {workout?.kind === 'run' && (
-        <Badge variant="secondary">{activity ? `${activity.distanceMi.toFixed(1)}mi run` : `${workout.targetMin}mi planned`}</Badge>
+        <Badge variant="secondary" className="max-w-full overflow-hidden">
+          <span className="truncate">
+            <span className="sm:hidden">{activity ? `${activity.distanceMi.toFixed(1)}mi` : `${workout.targetMin}mi`}</span>
+            <span className="hidden sm:inline">{activity ? `${activity.distanceMi.toFixed(1)}mi run` : `${workout.targetMin}mi planned`}</span>
+          </span>
+        </Badge>
       )}
-      {workout?.kind === 'race' && <Badge>{workout.note}</Badge>}
-      {strengthLog && <Badge variant="outline">{strengthLog.activityType}</Badge>}
+      {workout?.kind === 'race' && (
+        <Badge className="max-w-full overflow-hidden">
+          <span className="truncate">{workout.note}</span>
+        </Badge>
+      )}
+      {strengthLog && (
+        <Badge variant="outline" className="max-w-full overflow-hidden">
+          <span className="truncate">{strengthLog.activityType}</span>
+        </Badge>
+      )}
     </button>
   );
 }
