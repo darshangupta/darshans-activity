@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { MonthGrid } from '@/components/calendar/MonthGrid';
 import { DayDetailPanel } from '@/components/calendar/DayDetailPanel';
 import { PlannedWorkout, StravaActivity, StrengthLog } from '@/lib/types';
+import { syncStravaAction } from '@/app/actions';
 
 function monthRange(year: number, month: number): { start: string; end: string } {
   const start = `${year}-${String(month + 1).padStart(2, '0')}-01`;
@@ -38,7 +39,7 @@ export default function HomePage() {
 
   async function syncNow() {
     setSyncing(true);
-    await fetch('/api/strava/sync');
+    await syncStravaAction();
     refresh();
     setSyncing(false);
   }
