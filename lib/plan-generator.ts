@@ -173,5 +173,31 @@ export function generatePlan(
     });
   }
 
+  for (const race of [half, marathon]) {
+    const raceDate = parseISO(race.date);
+    if (diffDays(raceDate, start) < 0 || diffDays(raceDate, end) > 0) continue;
+    const raceWorkout: PlannedWorkout = {
+      date: race.date,
+      kind: 'race',
+      targetMin: race.distanceMiles,
+      targetMax: race.distanceMiles,
+      isOverride: false,
+      note: race.name === 'half' ? 'Half Marathon Race Day' : 'Marathon Race Day',
+    };
+    const idx = workouts.findIndex(w => w.date === race.date);
+    if (idx >= 0) workouts[idx] = raceWorkout;
+    else workouts.push(raceWorkout);
+  }
+
+  workouts.sort((a, b) => (a.date < b.date ? -1 : 1));
   return workouts;
+}
+
+export function applyOverrides(
+  generated: PlannedWorkout[], existing: PlannedWorkout[],
+): PlannedWorkout[] {
+  const overrideMap = new Map(
+    existing.filter(w => w.isOverride).map(w => [w.date, w]),
+  );
+  return generated.map(w => overrideMap.get(w.date) ?? w);
 }

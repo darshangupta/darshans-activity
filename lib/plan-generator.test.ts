@@ -1,6 +1,6 @@
 // lib/plan-generator.test.ts
 import { describe, it, expect } from 'vitest';
-import { generatePlan } from './plan-generator';
+import { generatePlan, applyOverrides } from './plan-generator';
 import { RACES, DEFAULT_PLAN_CONFIG } from './types';
 
 describe('generatePlan - open days', () => {
@@ -84,5 +84,38 @@ describe('generatePlan - long run progression', () => {
     expect(map['2026-12-05']).toMatchObject({ targetMin: 13, targetMax: 13 }); // 19 * 0.7
     expect(map['2026-12-12']).toMatchObject({ targetMin: 10, targetMax: 10 }); // 19 * 0.5
     expect(map['2026-12-19']).toMatchObject({ targetMin: 6, targetMax: 6 });   // 19 * 0.3
+  });
+});
+
+describe('generatePlan - race days', () => {
+  it('overlays the half marathon on its date, overriding the weekday template', () => {
+    const plan = generatePlan(DEFAULT_PLAN_CONFIG, RACES, '2026-06-22', '2026-12-25');
+    const raceDay = plan.find(w => w.date === '2026-08-16'); // a Sunday, normally 'open'
+    expect(raceDay).toMatchObject({
+      kind: 'race', targetMin: 13.1, targetMax: 13.1, note: 'Half Marathon Race Day',
+    });
+  });
+
+  it('overlays the marathon on its date, overriding the weekday template', () => {
+    const plan = generatePlan(DEFAULT_PLAN_CONFIG, RACES, '2026-06-22', '2026-12-25');
+    const raceDay = plan.find(w => w.date === '2026-12-25'); // a Friday, normally 'open'
+    expect(raceDay).toMatchObject({
+      kind: 'race', targetMin: 26.2, targetMax: 26.2, note: 'Marathon Race Day',
+    });
+  });
+});
+
+describe('applyOverrides', () => {
+  it('keeps user-edited rows and discards stale generated rows for the same date', () => {
+    const generated = [
+      { date: '2026-06-22', kind: 'run' as const, targetMin: 3, targetMax: 3, isOverride: false, note: null },
+      { date: '2026-06-23', kind: 'open' as const, targetMin: null, targetMax: null, isOverride: false, note: null },
+    ];
+    const existing = [
+      { date: '2026-06-22', kind: 'run' as const, targetMin: 8, targetMax: 8, isOverride: true, note: 'felt good, extended it' },
+    ];
+    const merged = applyOverrides(generated, existing);
+    expect(merged.find(w => w.date === '2026-06-22')).toEqual(existing[0]);
+    expect(merged.find(w => w.date === '2026-06-23')).toEqual(generated[1]);
   });
 });
