@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { MonthGrid } from '@/components/calendar/MonthGrid';
 import { DayDetailPanel } from '@/components/calendar/DayDetailPanel';
 import { PlannedWorkout, StravaActivity, StrengthLog } from '@/lib/types';
@@ -58,7 +59,7 @@ export default function HomePage() {
         <button onClick={() => changeMonth(1)} className="px-3 py-1 rounded border">→</button>
       </div>
 
-      <div className="flex justify-end mb-3">
+      <div className="flex justify-end gap-2 mb-3">
         <button
           onClick={syncNow}
           disabled={syncing}
@@ -66,6 +67,9 @@ export default function HomePage() {
         >
           {syncing ? 'Syncing...' : 'Sync Strava now'}
         </button>
+        <Link href="/settings" className="text-sm px-3 py-1 rounded border">
+          Settings
+        </Link>
       </div>
 
       <MonthGrid

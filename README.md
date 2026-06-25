@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# darshans-activity
 
-## Getting Started
+A personal training tracker for a half marathon (Aug 16, 2026) and marathon (Dec 25, 2026). It generates a calendar-based training plan, syncs completed runs from Strava automatically, and lets you log strength/box workouts and edit individual planned days — all in one month-grid view.
 
-First, run the development server:
+## Stack
+
+Next.js (App Router) on Vercel, Vercel Postgres, Strava API for run sync.
+
+## Environment variables
+
+Copy `.env.example` to `.env.local` and fill in real values:
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `POSTGRES_URL` | yes | Vercel Postgres connection string |
+| `STRAVA_CLIENT_ID` | yes | Strava API app client ID ([strava.com/settings/api](https://www.strava.com/settings/api)) |
+| `STRAVA_CLIENT_SECRET` | yes | Strava API app client secret |
+| `STRAVA_REDIRECT_URI` | yes | OAuth redirect URI registered with the Strava app, e.g. `https://your-app.vercel.app/api/strava/callback` |
+| `CRON_SECRET` | optional, recommended | Authenticates Vercel Cron's calls to `/api/strava/sync` so the endpoint can't be triggered by anyone who finds the URL. Generate with `openssl rand -hex 32` and set it as a Vercel project env var — Vercel Cron automatically sends it as `Authorization: Bearer <CRON_SECRET>`. |
+
+## Setup
+
+Install dependencies, then apply the database schema and seed initial data (races, plan config, starting plan) in this order:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npx tsx scripts/apply-schema.ts
+npx tsx scripts/seed.ts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### One-time Strava connection
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+After deploying (or while running locally with valid Strava env vars), visit `/api/strava/connect` once in a browser to authorize the app and store OAuth tokens. You'll be redirected back with `?strava=connected` on success. After this, the daily cron job (configured in `vercel.json`) keeps runs in sync automatically, and the "Sync Strava now" button on the home page can trigger a sync on demand.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Development
 
-## Learn More
+```bash
+npm run dev      # start the dev server at http://localhost:3000
+npm run build    # production build
+npm run test     # run the test suite (vitest)
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Deploying
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npx vercel link
+npx vercel env add POSTGRES_URL
+npx vercel env add STRAVA_CLIENT_ID
+npx vercel env add STRAVA_CLIENT_SECRET
+npx vercel env add STRAVA_REDIRECT_URI
+npx vercel env add CRON_SECRET
+npx vercel --prod
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Then run the one-time Strava connect step above against the live deployment, and run the schema/seed scripts against production (pull production env vars first with `npx vercel env pull .env.local`).
