@@ -34,6 +34,29 @@ function isSameDate(a: Date, b: Date): boolean {
   return formatISO(a) === formatISO(b);
 }
 
+type Phase =
+  | 'half-build' | 'half-taper' | 'recovery'
+  | 'marathon-build' | 'marathon-taper' | 'post-marathon';
+
+function getPhase(date: Date, half: Race, marathon: Race): Phase {
+  const halfDate = parseISO(half.date);
+  const marathonDate = parseISO(marathon.date);
+  const halfTaperStart = addDays(halfDate, -14);
+  const recoveryEnd = addDays(halfDate, 7);
+  const marathonTaperStart = addDays(marathonDate, -21);
+
+  if (diffDays(date, halfTaperStart) < 0) return 'half-build';
+  if (diffDays(date, halfDate) <= 0) return 'half-taper';
+  if (diffDays(date, recoveryEnd) <= 0) return 'recovery';
+  if (diffDays(date, marathonTaperStart) < 0) return 'marathon-build';
+  if (diffDays(date, marathonDate) <= 0) return 'marathon-taper';
+  return 'post-marathon';
+}
+
+function phaseIntensity(phase: Phase): number {
+  return phase === 'half-build' || phase === 'marathon-build' ? 1 : 0;
+}
+
 export function generatePlan(
   config: PlanConfig,
   races: Race[],
@@ -63,9 +86,21 @@ export function generatePlan(
       continue;
     }
 
+    if (weekday !== 'saturday') {
+      const phase = getPhase(date, half, marathon);
+      const intensity = phaseIntensity(phase);
+      const miles = Math.round(dayConfig.min + (dayConfig.max - dayConfig.min) * intensity);
+      workouts.push({
+        date: iso, kind: 'run', targetMin: miles, targetMax: miles,
+        isOverride: false, note: null,
+      });
+      continue;
+    }
+
+    // Saturday placeholder — long run logic added in the next step
     workouts.push({
       date: iso, kind: 'run', targetMin: null, targetMax: null,
-      isOverride: false, note: null,
+      isOverride: false, note: 'Long run',
     });
   }
 
