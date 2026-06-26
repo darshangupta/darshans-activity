@@ -83,27 +83,25 @@ export function DayDetailPanel({ date, workout, activity, strengthLog, onClose, 
           </div>
         )}
 
-        {(!workout || workout.kind === 'open') && (
-          <div className="space-y-2">
-            <p className="text-sm text-neutral-500">Open day — log lifting or boxing if you did one.</p>
-            {strengthLog ? (
-              <p className="text-sm">Logged: {strengthLog.activityType} {strengthLog.durationMin ? `(${strengthLog.durationMin} min)` : ''} {strengthLog.note}</p>
-            ) : (
-              <>
-                <Select value={strengthType} onValueChange={v => setStrengthType(v as StrengthActivityType)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="lift">Lift</SelectItem>
-                    <SelectItem value="box">Box</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input value={duration} onChange={e => setDuration(e.target.value)} placeholder="Duration (min)" type="number" />
-                <Textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Notes" />
-                <Button onClick={saveStrengthLog}>Log it</Button>
-              </>
-            )}
-          </div>
-        )}
+        <div className="space-y-2 border-t pt-3 mt-1">
+          <p className="text-sm font-medium">Strength / Boxing</p>
+          {strengthLog ? (
+            <p className="text-sm text-neutral-600">Logged: {strengthLog.activityType} {strengthLog.durationMin ? `(${strengthLog.durationMin} min)` : ''} {strengthLog.note}</p>
+          ) : (
+            <>
+              <Select value={strengthType} onValueChange={v => setStrengthType(v as StrengthActivityType)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lift">Lift</SelectItem>
+                  <SelectItem value="box">Box</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input value={duration} onChange={e => setDuration(e.target.value)} placeholder="Duration (min)" type="number" />
+              <Textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Notes" />
+              <Button onClick={saveStrengthLog}>Log it</Button>
+            </>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
