@@ -5,7 +5,7 @@ import { PlannedWorkout, StravaActivity, StrengthLog } from '@/lib/types';
 
 interface Props {
   year: number;
-  month: number; // 0-indexed
+  month: number;
   workouts: PlannedWorkout[];
   activities: StravaActivity[];
   strengthLogs: StrengthLog[];
@@ -43,11 +43,22 @@ export function MonthGrid({ year, month, workouts, activities, strengthLogs, onS
   }
 
   return (
-    <div className="grid grid-cols-7 gap-2">
-      {WEEKDAY_LABELS.map(label => (
-        <div key={label} className="text-center text-xs font-medium text-neutral-500">{label}</div>
-      ))}
-      {cells}
+    <div className="space-y-2">
+      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+        {WEEKDAY_LABELS.map((label, i) => (
+          <div key={label} className={`text-center text-[10px] font-medium pb-1 ${i === 0 || i === 6 ? 'text-slate-600' : 'text-slate-500'}`}>
+            {label}
+          </div>
+        ))}
+        {cells}
+      </div>
+
+      {/* Legend */}
+      <div className="flex gap-4 pt-2 text-[10px] text-slate-600">
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-orange-500/40 inline-block" /> Run</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-violet-500/40 inline-block" /> Race</span>
+        <span className="flex items-center gap-1"><span className="text-emerald-500">🥊</span> Strength</span>
+      </div>
     </div>
   );
 }

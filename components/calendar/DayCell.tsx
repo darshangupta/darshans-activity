@@ -1,6 +1,5 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { PlannedWorkout, StravaActivity, StrengthLog } from '@/lib/types';
 
@@ -15,38 +14,57 @@ interface Props {
 }
 
 export function DayCell({ date, dayOfMonth, isToday, workout, activity, strengthLog, onSelect }: Props) {
-  const color =
-    workout?.kind === 'race' ? 'bg-purple-100 border-purple-400' :
-    workout?.kind === 'run' ? 'bg-blue-50 border-blue-300' :
-    'bg-neutral-50 border-neutral-200';
+  const isRun = workout?.kind === 'run';
+  const isRace = workout?.kind === 'race';
+  const isCompleted = isRun && !!activity;
 
   return (
     <button
       onClick={() => onSelect(date)}
       className={cn(
-        'flex flex-col gap-1 rounded-md border p-1.5 sm:p-2 text-left text-xs min-h-16 sm:min-h-20 hover:ring-2 hover:ring-offset-1 hover:ring-blue-300 transition',
-        color,
-        isToday && 'ring-2 ring-blue-500',
+        'flex flex-col gap-1 rounded-xl border p-1.5 sm:p-2 text-left min-h-16 sm:min-h-20 transition-all hover:scale-[1.02] hover:z-10 relative',
+        isRace
+          ? 'bg-violet-500/10 border-violet-500/40 hover:border-violet-400/70'
+          : isCompleted
+            ? 'bg-orange-500/15 border-orange-500/50 hover:border-orange-400/80'
+            : isRun
+              ? 'bg-orange-500/8 border-orange-500/25 hover:border-orange-500/50'
+              : 'bg-white/[0.03] border-white/8 hover:border-white/20',
+        isToday && 'ring-2 ring-orange-500 ring-offset-1 ring-offset-background',
       )}
     >
-      <span className="font-semibold">{dayOfMonth}</span>
-      {workout?.kind === 'run' && (
-        <Badge variant="secondary" className="max-w-full overflow-hidden">
-          <span className="truncate">
-            <span className="sm:hidden">{activity ? `${activity.distanceMi.toFixed(1)}mi` : `${workout.targetMin}mi`}</span>
-            <span className="hidden sm:inline">{activity ? `${activity.distanceMi.toFixed(1)}mi run` : `${workout.targetMin}mi planned`}</span>
-          </span>
-        </Badge>
+      <span className={cn(
+        'text-xs font-semibold leading-none',
+        isToday ? 'text-orange-400' : 'text-slate-400',
+      )}>
+        {dayOfMonth}
+      </span>
+
+      {isRace && (
+        <span className="text-[10px] font-bold text-violet-300 uppercase tracking-wide leading-tight mt-auto truncate max-w-full">
+          {workout.note ?? 'Race'}
+        </span>
       )}
-      {workout?.kind === 'race' && (
-        <Badge className="max-w-full overflow-hidden">
-          <span className="truncate">{workout.note}</span>
-        </Badge>
+
+      {isRun && (
+        <span className={cn(
+          'text-[10px] font-semibold leading-none mt-auto truncate max-w-full',
+          isCompleted ? 'text-orange-300' : 'text-orange-500/70',
+        )}>
+          {isCompleted
+            ? `${activity.distanceMi.toFixed(1)}mi ✓`
+            : `${workout.targetMin}mi`}
+        </span>
       )}
+
       {strengthLog && (
-        <Badge variant="outline" className="max-w-full overflow-hidden">
-          <span className="truncate">{strengthLog.activityType}</span>
-        </Badge>
+        <span className={cn(
+          'text-[10px] font-medium leading-none truncate max-w-full',
+          isRun ? 'text-emerald-400/80' : 'text-emerald-400',
+        )}>
+          {strengthLog.activityType === 'box' ? '🥊' : '🏋️'}{' '}
+          <span className="sm:inline hidden">{strengthLog.activityType}</span>
+        </span>
       )}
     </button>
   );
